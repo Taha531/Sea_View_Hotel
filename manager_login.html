@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manager Login - Sea View Hotel</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      .login-box {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        width: 300px;
+        text-align: center;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        background: #004080;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #003366;
+      }
+      .error {
+        color: red;
+        margin-top: 10px;
+      }
+      .back-btn {
+        margin-top: 10px;
+        background: #888;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-box">
+      <h2>Manager Login</h2>
+      <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+      <p id="loginError" class="error"></p>
+      <button class="back-btn" onclick="window.location.href='index.html'">
+        Back to Home
+      </button>
+    </div>
+
+    <script>
+      const loginForm = document.getElementById("loginForm");
+      const loginError = document.getElementById("loginError");
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        loginError.textContent = "";
+
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const res = await fetch("http://localhost:3000/api/manager/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            loginError.textContent = data.error || "Login failed";
+            return;
+          }
+
+          localStorage.setItem("managerToken", data.token);
+          window.location.href = "manager.html";
+        } catch (err) {
+          console.error(err);
+          loginError.textContent = "Server error";
+        }
+      });
+    </script>
+  </body>
+</html>

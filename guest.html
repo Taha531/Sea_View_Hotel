@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guest Dashboard - Sea View Hotel</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #f9f9f9;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        background: #004080;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        position: relative;
+      }
+      header h1 {
+        margin: 0;
+      }
+      #logoutBtn,
+      #homeBtn {
+        position: absolute;
+        top: 20px;
+        padding: 8px 15px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        color: white;
+      }
+      #logoutBtn {
+        right: 20px;
+        background: red;
+      }
+      #homeBtn {
+        left: 20px;
+        background: gray;
+      }
+      nav {
+        display: flex;
+        justify-content: center;
+        background: #0066cc;
+        flex-wrap: wrap;
+      }
+      nav button {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        background: #0066cc;
+        color: white;
+        cursor: pointer;
+        font-size: 1em;
+        transition: 0.3s;
+        margin: 2px;
+      }
+      nav button:hover {
+        background: #004080;
+      }
+      nav button.active {
+        background: #003366;
+      }
+      section {
+        display: none;
+        max-width: 1000px;
+        margin: 20px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      section.active {
+        display: block;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ccc;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+      }
+      form input {
+        width: 95%;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      form button {
+        padding: 12px 20px;
+        background: #004080;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      form button:hover {
+        background: #003366;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Sea View Hotel - Guest Dashboard</h1>
+      <button id="logoutBtn">Logout</button>
+      <button id="homeBtn">Home</button>
+    </header>
+
+    <nav>
+      <button data-tab="reservation" class="active">Reservation Info</button>
+      <button data-tab="orders">Food Orders</button>
+      <button data-tab="services">Service Requests</button>
+      <button data-tab="orderFood">Order Food</button>
+      <button data-tab="requestService">Request Service</button>
+    </nav>
+
+    <section id="reservation" class="active">
+      <h2>Reservation Details</h2>
+      <div id="reservationContainer">Loading...</div>
+    </section>
+
+    <section id="orders">
+      <h2>Food Orders</h2>
+      <div id="ordersContainer">Loading...</div>
+    </section>
+
+    <section id="services">
+      <h2>Service Requests</h2>
+      <div id="servicesContainer">Loading...</div>
+    </section>
+
+    <section id="orderFood">
+      <h2>Order Food</h2>
+      <form id="foodForm">
+        <input type="number" id="itemId" placeholder="Item ID" required />
+        <input type="number" id="quantity" placeholder="Quantity" required />
+        <button type="submit">Place Order</button>
+      </form>
+      <div id="foodMsg"></div>
+      <h3>Available Menu Items</h3>
+      <div id="menuTableContainer">Loading...</div>
+    </section>
+
+    <section id="requestService">
+      <h2>Request Room Service</h2>
+      <form id="serviceForm">
+        <input
+          type="text"
+          id="serviceType"
+          placeholder="Enter service type (e.g. Cleaning, Laundry)"
+          required
+        />
+        <button type="submit">Request Service</button>
+      </form>
+      <div id="serviceMsg"></div>
+    </section>
+
+    <script>
+      const BASE_URL = "http://localhost:3000/api/guest";
+      const token = localStorage.getItem("guestToken");
+      if (!token) window.location.href = "guest_login.html";
+
+      const tabs = document.querySelectorAll("nav button");
+      const sections = document.querySelectorAll("section");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const homeBtn = document.getElementById("homeBtn");
+
+      // Tab switching
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          tabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          sections.forEach((sec) => sec.classList.remove("active"));
+          document.getElementById(tab.dataset.tab).classList.add("active");
+        });
+      });
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("guestToken");
+        window.location.href = "guest_login.html";
+      });
+
+      homeBtn.addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+
+      async function loadDashboard() {
+        // Reservation
+        const resRes = await fetch(`${BASE_URL}/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const resData = await resRes.json();
+        const container = document.getElementById("reservationContainer");
+        if (resRes.ok) {
+          container.innerHTML = `
+            <p><strong>Room:</strong> ${resData.reservation.Room_No}</p>
+            <p><strong>Check-In:</strong> ${new Date(
+              resData.reservation.CheckIn_Date
+            ).toLocaleDateString()}</p>
+            <p><strong>Check-Out:</strong> ${new Date(
+              resData.reservation.CheckOut_Date
+            ).toLocaleDateString()}</p>
+            <p><strong>Number of Guests:</strong> ${
+              resData.reservation.Number_of_Guests
+            }</p>
+            <p><strong>Billing Status:</strong> ${
+              resData.reservation.Billing_Status || "Pending"
+            }</p>
+          `;
+        } else container.textContent = "Could not load reservation info.";
+
+        // Orders
+        const ordersRes = await fetch(`${BASE_URL}/orders`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const ordersData = await ordersRes.json();
+        const ordersContainer = document.getElementById("ordersContainer");
+        if (ordersRes.ok && ordersData.orders.length > 0) {
+          let table =
+            "<table><tr><th>Item</th><th>Quantity</th><th>Status</th><th>Time</th></tr>";
+          ordersData.orders.forEach((o) => {
+            table += `<tr><td>${o.Item_Name}</td><td>${o.Quantity}</td><td>${
+              o.Status
+            }</td><td>${new Date(o.Order_Time).toLocaleString()}</td></tr>`;
+          });
+          table += "</table>";
+          ordersContainer.innerHTML = table;
+        } else ordersContainer.textContent = "No orders yet.";
+
+        // Services
+        const servRes = await fetch(`${BASE_URL}/services`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const servData = await servRes.json();
+        const servicesContainer = document.getElementById("servicesContainer");
+        if (servRes.ok && servData.services.length > 0) {
+          let table =
+            "<table><tr><th>Service</th><th>Date</th><th>Status</th></tr>";
+          servData.services.forEach((s) => {
+            table += `<tr><td>${s.Service_Type}</td><td>${
+              s.Request_Date
+            }</td><td>${s.Status || "Pending"}</td></tr>`;
+          });
+          table += "</table>";
+          servicesContainer.innerHTML = table;
+        } else servicesContainer.textContent = "No service requests yet.";
+
+        loadMenuTable();
+      }
+
+      // --- Load Menu Table ---
+      async function loadMenuTable() {
+        try {
+          const res = await fetch(`${BASE_URL}/menu`);
+          const data = await res.json();
+
+          if (!res.ok) throw new Error(data.error);
+
+          const menuContainer = document.getElementById("menuTableContainer");
+          menuContainer.innerHTML = "";
+
+          if (data.menu.length === 0) {
+            menuContainer.innerHTML = "<p>No menu items found.</p>";
+            return;
+          }
+
+          const table = document.createElement("table");
+          table.innerHTML = `<tr><th>Item ID</th><th>Item Name</th><th>Category</th><th>Price</th></tr>`;
+          data.menu.forEach((item) => {
+            const row = `<tr>
+              <td>${item.Item_ID}</td>
+              <td>${item.Item_Name}</td>
+              <td>${item.Category}</td>
+              <td>${item.Price}</td>
+            </tr>`;
+            table.innerHTML += row;
+          });
+          menuContainer.appendChild(table);
+        } catch (err) {
+          console.error(err);
+          document.getElementById("menuTableContainer").innerHTML =
+            "<p style='color:red;'>Error loading menu.</p>";
+        }
+      }
+
+      // --- Food Form ---
+      document
+        .getElementById("foodForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const item_id = document.getElementById("itemId").value;
+          const quantity = document.getElementById("quantity").value;
+          const msg = document.getElementById("foodMsg");
+          try {
+            const res = await fetch(`${BASE_URL}/order`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ item_id, quantity }),
+            });
+            const data = await res.json();
+            msg.style.color = res.ok ? "green" : "red";
+            msg.textContent = res.ok ? "Order placed!" : data.error;
+            loadDashboard();
+          } catch (err) {
+            console.error(err);
+            msg.style.color = "red";
+            msg.textContent = "Server error";
+          }
+        });
+
+      // --- Service Form ---
+      document
+        .getElementById("serviceForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const service_type = document.getElementById("serviceType").value;
+          const msg = document.getElementById("serviceMsg");
+          try {
+            const res = await fetch(`${BASE_URL}/request-service`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ service_type }),
+            });
+            const data = await res.json();
+            msg.style.color = res.ok ? "green" : "red";
+            msg.textContent = data.message || data.error;
+            loadDashboard();
+          } catch (err) {
+            console.error(err);
+            msg.style.color = "red";
+            msg.textContent = "Server error";
+          }
+        });
+
+      loadDashboard();
+    </script>
+  </body>
+</html>

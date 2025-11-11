@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guest Login - Sea View Hotel</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #f9f9f9;
+        margin: 0;
+        padding: 0;
+      }
+      .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      input {
+        width: 95%;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background: #004080;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #003366;
+      }
+      #error {
+        color: red;
+        margin-top: 10px;
+      }
+      #homeBtn {
+        margin-top: 10px;
+        background: gray;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <h2>Guest Login</h2>
+      <form id="guestLoginForm">
+        <input
+          type="number"
+          id="room_number"
+          placeholder="Room Number"
+          required
+        />
+        <input type="text" id="phone" placeholder="Phone Number" required />
+        <button type="submit">Login</button>
+      </form>
+      <div id="error"></div>
+      <button id="homeBtn">Back to Home</button>
+    </div>
+
+    <script>
+      const BASE_URL = "http://localhost:3000/api/guest";
+      const form = document.getElementById("guestLoginForm");
+      const errorDiv = document.getElementById("error");
+      const homeBtn = document.getElementById("homeBtn");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errorDiv.textContent = "";
+        const room_number = document.getElementById("room_number").value;
+        const phone = document.getElementById("phone").value;
+
+        try {
+          const res = await fetch(`${BASE_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ room_number, phone }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            errorDiv.textContent = data.error || "Login failed";
+            return;
+          }
+          localStorage.setItem("guestToken", data.token);
+          window.location.href = "guest.html";
+        } catch (err) {
+          console.error(err);
+          errorDiv.textContent = "Server error";
+        }
+      });
+
+      homeBtn.addEventListener("click", () => {
+        window.location.href = "index.html";
+      });
+    </script>
+  </body>
+</html>
